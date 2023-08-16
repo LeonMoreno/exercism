@@ -13,13 +13,13 @@ class Crypto
   end
 
   def ciphertext
-    return '' unless @sanitized_txt&.length.positive?
+    return '' if @sanitized_txt&.empty?
 
-    puts "len = #{@sanitized_txt.length}"
     size_the_rectangle(@sanitized_txt.length)
-    puts "Asi quedo col = #{@col} -- Row = #{@row}"
     text_in_chunks(normalize_text)
   end
+
+  private
 
   def size_the_rectangle(len)
     @col = Math.sqrt(len).to_i
@@ -53,11 +53,18 @@ class Crypto
     @row.times do
       nmr_txt << @sanitized_txt.slice!(0, @col)
     end
-    new_nmr_txt = []
-    @col.times do
-      nmr_txt.each { |x| new_nmr_txt << x.slice!(0) }
+    @col.times do |index|
+      nmr_txt.last[index] = ' ' unless nmr_txt.last[index]
     end
-    new_nmr_txt.join
+    ft_transpose(nmr_txt)
+  end
+
+  def ft_transpose(nmr_txt)
+    res = []
+    @col.times do
+      nmr_txt.each { |x| res << x.slice!(0) }
+    end
+    res.join
   end
 
   def text_in_chunks(norm_txt)
@@ -70,10 +77,6 @@ class Crypto
   end
 end
 
-puts Crypto.new("hola mi leo bello. a").ciphertext
-
-
-# # puts Crypto.new("... --- ...").ciphertext
-
-
-# # puts Crypto.new("If man was meant to stay on the ground, god would have given us roots.").ciphertext
+# Crypto.new("hola leo.").ciphertext
+# puts Crypto.new("... --- ...").ciphertext
+# puts Crypto.new("If man was meant to stay on the ground, god would have given us roots.").ciphertext
