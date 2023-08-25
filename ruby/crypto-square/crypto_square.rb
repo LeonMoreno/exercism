@@ -1,82 +1,88 @@
-# # require "byebug"
-# =begin
-# Write your code for the 'Crypto Square' exercise in this file. Make the tests in
-# `crypto_square_test.rb` pass.
-
-# To get started with TDD, see the `README.md` file in your
-# `ruby/crypto-square` directory.
-# =end
-
 class Crypto
-  def initialize(plain_txt)
-    @sanitized_txt = sanitize_input(plain_txt)
-  end
-
-  def ciphertext
-    return '' if @sanitized_txt&.empty?
-
-    size_the_rectangle(@sanitized_txt.length)
-    text_in_chunks(normalize_text)
-  end
-
   private
 
-  def size_the_rectangle(len)
-    @col = Math.sqrt(len).to_i
-    @row = len / @col if len.positive?
+  attr_accessor :number_of_columns, :number_of_rows
+  attr_reader :sanitized_text
 
-    loop do
-      res = evaluate_conditions(len)
-      break if res
+  def initialize(plain_text)
+    @sanitized_text = sanitize_input(plain_text)
+    size_the_rectangle(sanitized_text.length)
+  end
+
+  def size_the_rectangle(length)
+    return sanitized_text if sanitized_text.empty?
+
+    self.number_of_columns = Math.sqrt(length).floor(0)
+    self.number_of_rows = length / number_of_columns if length.positive?
+
+    evalued = evaluate_conditions(length) until evalued
+  end
+
+  def increment_columns
+    self.number_of_columns += 1
+  end
+
+  def decrement_rows
+    self.number_of_rows -= 1
+  end
+
+  def evaluate_conditions(length)
+    if number_of_rows * number_of_columns < length
+      increment_columns and false
+    elsif number_of_columns < number_of_rows
+      decrement_rows and false
+    else
+      (number_of_columns - number_of_rows) <= 1
     end
   end
 
-  def evaluate_conditions(len)
-    if @row * @col < len
-      @col += 1
-      return false
-    elsif @col < @row
-      @row -= 1
-      return false
-    end
-    return false if (@col - @row) > 1
-
-    true
+  def sanitize_input(plain_text)
+    # benefit of "duck typing":
+    # String and Array are the methods length & slice!
+    # plain_text.downcase.gsub(/\W/, '')
+    plain_text.downcase.scan(/\w/)
   end
 
-  def sanitize_input(plain_txt)
-    plain_txt.downcase.gsub(/\W/, '')
+  def encoded_text
+    text_in_slices = []
+    number_of_rows.times do
+      text_in_slices << sanitized_text.slice!(0, number_of_columns)
+    end
+    number_of_columns.times do |index|
+      text_in_slices.last[index] = ' ' unless text_in_slices.last[index]
+    end
+    to_transpose(text_in_slices)
   end
 
-  def normalize_text
-    nmr_txt = []
-    @row.times do
-      nmr_txt << @sanitized_txt.slice!(0, @col)
+  def to_transpose(text_in_slices)
+    text_transpose = []
+    number_of_columns.times do
+      text_in_slices.each { |word| text_transpose << word.slice!(0) }
     end
-    @col.times do |index|
-      nmr_txt.last[index] = ' ' unless nmr_txt.last[index]
-    end
-    ft_transpose(nmr_txt)
+    text_transpose.join
   end
 
-  def ft_transpose(nmr_txt)
-    res = []
-    @col.times do
-      nmr_txt.each { |x| res << x.slice!(0) }
+  def text_in_chunks(encoded_text)
+    encoded_text_in_chunks = String.new
+    number_of_columns.times do |index|
+      encoded_text_in_chunks << encoded_text.slice!(0, number_of_rows).to_s
+      encoded_text_in_chunks << ' ' if index < number_of_columns - 1
     end
-    res.join
+    encoded_text_in_chunks
   end
 
-  def text_in_chunks(norm_txt)
-    res = String.new
-    @col.times do |i|
-      res << norm_txt.slice!(0, @row).to_s
-      res << ' ' if i < @col - 1
-    end
-    res
+  public
+
+  def ciphertext
+    return '' if sanitized_text.empty?
+
+    text_in_chunks(encoded_text)
   end
 end
 
-# Crypto.new("hola leo.").ciphertext
-# puts Crypto.new("... --- ...").ciphertext
-# puts Crypto.new("If man was meant to stay on the ground, god would have given us roots.").ciphertext
+if $PROGRAM_NAME == __FILE__
+  puts Crypto.new("hola leo.").ciphertext
+  # puts Crypto.private_instance_methods(false)
+  puts Crypto.new("... --- ...").ciphertext
+  puts Crypto.new("If man was meant to stay on the ground, god would have given us roots.").ciphertext
+end
